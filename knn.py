@@ -1,14 +1,11 @@
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
-from sklearn.metrics import roc_curve, auc
-from sklearn.model_selection import cross_val_score
-from scipy import interp
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 import time
 import utils
 
@@ -33,20 +30,18 @@ def param_grid():
     print(confusion_matrix(y_test, y_pred, labels=range(10)))
 
 if __name__ == '__main__':
-    num_train = 4096
-    num_test = 1024
-    # featrue_preserve_radio = .95
+    num_train = 50000
+    num_test = 10000
+    featrue_preserve_radio = .95
     x_train, y_train, x_test, y_test = utils.load_data()
     x_train = x_train[0:num_train, :]
     y_train = y_train[0:num_train]
     x_test = x_test[0:num_test, :]
     y_test = y_test[0:num_test]
-    # x_train_pca, x_test_pca = utils.pca(x_train, x_test, featrue_preserve_radio)
-    x_train_pca, x_test_pca = utils.pca_with_model(pca_model_name='pca_model.sav',
-                                                   scaler_model_name='scaler_model.sav',
-                                                   x_train=x_train, x_test=x_test)
-    clf = SVC(kernel='linear')
-    # clf = SVC(kernel='rbf', gamma=0.0005, C=10)
+    x_train_pca, x_test_pca = utils.pca(x_train, x_test, featrue_preserve_radio)
+    print(x_train_pca[0])
+    clf = KNeighborsClassifier(n_neighbors=3)
+    # clf = SVC(kernel='poly')
     tic = time.time()
     clf.fit(x_train_pca, y_train)
     score = clf.score(x_test_pca, y_test)
@@ -55,8 +50,9 @@ if __name__ == '__main__':
     print("score: {:.6f}".format(score))
 
     y_pred = clf.predict(x_test_pca)
-    print(classification_report(y_test, y_pred, target_names=utils.label_names))
-    utils.plot_confusion_matrix(confusion_matrix(y_test, y_pred))
+    print(confusion_matrix(y_test, y_pred))
+    classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    print(classification_report(y_test, y_pred, target_names=classes))
 
     '''train_sizes, train_scores, test_scores = learning_curve(estimator=clf, X=x_train_pca, y=y_train,
                                                             train_sizes=np.linspace(0.1, 1.0, 10), cv=10, n_jobs=1)
