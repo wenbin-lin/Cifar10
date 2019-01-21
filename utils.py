@@ -3,12 +3,6 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import pickle
 import matplotlib.pyplot as plt
-import itertools
-import seaborn as sn
-import pandas as pd
-import os
-import tensorflow as tf
-from keras.callbacks import TensorBoard
 
 train_set_path = ('./cifar-10-batches-py/data_batch_1',
                   './cifar-10-batches-py/data_batch_2',
@@ -17,14 +11,11 @@ train_set_path = ('./cifar-10-batches-py/data_batch_1',
                   './cifar-10-batches-py/data_batch_5')
 test_set_path = './cifar-10-batches-py/test_batch'
 
-label_names = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+label_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 def convert_to_one_hot(y, num_classes):
     y = np.eye(num_classes)[y.reshape(-1)]
     return y
-
-def test_meta():
-    print('todo')
 
 def load_data():
     images_train = np.zeros(shape=(50000, 3, 32, 32), dtype = np.uint8)
@@ -94,6 +85,7 @@ def pca_with_model(pca_model_name, scaler_model_name, x_train, x_test):
     x_test_flatten = pca_model.transform(x_test_flatten)
     return x_train_flatten, x_test_flatten
 
+# reference https://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html
 def plot_learning_curve(train_sizes, train_scores, test_scores):
     # get mean and std
     train_mean = np.mean(train_scores, axis=1)
@@ -112,68 +104,21 @@ def plot_learning_curve(train_sizes, train_scores, test_scores):
     plt.ylim([0.0, 1.0])
     plt.show()
 
-def pca_visualize(x, y):
-    # flatten
-    x_flatten = x.reshape(x.shape[0], -1)
-    # normalization
-    scaler = StandardScaler()
-    scaler.fit(x_flatten)
-    x_flatten = scaler.transform(x_flatten)
-    print(x_flatten[0])
-    # pca
-    pca = PCA(n_components=2)
-    pca.fit_transform(x_flatten)
-    x_principal = pca.transform(x_flatten)
-    f, ax = plt.subplots()
-    for l, c, m in zip(range(0, 3), ('blue', 'red', 'green'), ('^', 's', 'o')):
-        ax.scatter(x_principal[y == l, 0],
-                   x_principal[y == l, 1],
-                   color=c,
-                   label='class %s' % l,
-                   alpha=0.5,
-                   marker=m
-                   )
-    ax.set_title('')
+# reference https://keras.io/visualization/
+def plot_history(history):
+    # summarize history for accuracy
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
     plt.show()
-
-def plot_confusion_matrix(cm):
-    df_cm = pd.DataFrame(cm, index = [i for i in label_names],
-                      columns = [i for i in label_names])
-    heatmap = sn.heatmap(df_cm, annot=True, fmt="d")
-    heatmap.yaxis.set_ticklabels(heatmap.yaxis.get_ticklabels(), rotation=0, ha='right', fontsize=10)
-    heatmap.xaxis.set_ticklabels(heatmap.xaxis.get_ticklabels(), rotation=45, ha='right', fontsize=10)
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
     plt.show()
-
-from sklearn.metrics import roc_auc_score
-from keras.callbacks import Callback
-class roc_callback(Callback):
-    def __init__(self,training_data,validation_data):
-        self.x = training_data[0]
-        self.y = training_data[1]
-        self.x_val = validation_data[0]
-        self.y_val = validation_data[1]
-
-    def on_train_begin(self, logs={}):
-        return
-
-    def on_train_end(self, logs={}):
-        return
-
-    def on_epoch_begin(self, epoch, logs={}):
-        return
-
-    def on_epoch_end(self, epoch, logs={}):
-        y_pred = self.model.predict(self.x)
-        roc = roc_auc_score(self.y, y_pred)
-        y_pred_val = self.model.predict(self.x_val)
-        roc_val = roc_auc_score(self.y_val, y_pred_val)
-        print('\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc,4)),str(round(roc_val,4))),end=100*' '+'\n')
-        return
-
-    def on_batch_begin(self, batch, logs={}):
-        return
-
-    def on_batch_end(self, batch, logs={}):
-        return
